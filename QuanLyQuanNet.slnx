@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="ClientApp/ClientApp.csproj" />
+  <Project Path="ServerAdmin/ServerAdmin.csproj" />
+  <Project Path="SharedModels/SharedModels.csproj" />
+</Solution>
