@@ -71,5 +71,5 @@ Dự án được triển khai trên 1 hệ thống Solution `QuanLyQuanNet.sln`
    - Chứa `WidgetForm.cs` đại diện cho màn hình đếm lùi Desktop.
 
 ---
-*Dự án đang trong quá trình phát triển (WIP). Sẽ có thêm menu order và chức năng phức tạp khác.*
-*(c) 2026 bởi hangoctan1012.*
+*Đồ án đang trong quá trình phát triển. Sẽ có thêm menu order và chức năng phức tạp khác.*
+
