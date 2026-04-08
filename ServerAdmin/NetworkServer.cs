@@ -13,12 +13,12 @@ namespace ServerAdmin
 {
     public class NetworkServer
     {
-        private TcpListener _listener;
+        private TcpListener? _listener;
         private bool _isRunning;
         private ConcurrentDictionary<int, TcpClient> _connectedClients; // ComputerId -> TcpClient
 
-        public event Action<string> OnLogMessage;
-        public event Action<int, string> OnComputerStatusChanged;
+        public event Action<string>? OnLogMessage;
+        public event Action<int, string>? OnComputerStatusChanged;
 
         public NetworkServer()
         {
@@ -53,6 +53,11 @@ namespace ServerAdmin
             {
                 try
                 {
+                    if (_listener == null)
+                    {
+                        break;
+                    }
+
                     TcpClient client = await _listener.AcceptTcpClientAsync();
                     OnLogMessage?.Invoke($"Client connected: {client.Client.RemoteEndPoint}");
                     _ = Task.Run(() => HandleClientAsync(client));
@@ -76,7 +81,7 @@ namespace ServerAdmin
                 {
                     while (_isRunning && client.Connected)
                     {
-                        string line = await reader.ReadLineAsync();
+                        string? line = await reader.ReadLineAsync();
                         if (line == null) break;
 
                         // Expected JSON format: { "Action": "...", "Payload": "..." }
@@ -111,11 +116,16 @@ namespace ServerAdmin
         {
             try
             {
-                switch (request.Action)
+                switch (request.Action ?? string.Empty)
                 {
                     case "Identify":
                         // Payload is ComputerName
                         var compName = request.Payload;
+                        if (string.IsNullOrWhiteSpace(compName))
+                        {
+                            return new NetworkMessage { Action = "IdentifyResponse", Payload = "Error: Missing computer name" };
+                        }
+
                         using (var db = DatabaseHelper.GetConnection())
                         {
                             var compId = db.ExecuteScalar<int?>("SELECT Id FROM Computers WHERE Name = @Name", new { Name = compName });
@@ -131,7 +141,17 @@ namespace ServerAdmin
 
                     case "Login":
                         // { "Username": "...", "Password": "..." }
+                        if (string.IsNullOrWhiteSpace(request.Payload))
+                        {
+                            return new NetworkMessage { Action = "LoginResponse", Payload = "Error: Missing login payload" };
+                        }
+
                         var loginData = JsonSerializer.Deserialize<LoginRequest>(request.Payload);
+                        if (loginData == null || string.IsNullOrWhiteSpace(loginData.Username) || string.IsNullOrWhiteSpace(loginData.Password))
+                        {
+                            return new NetworkMessage { Action = "LoginResponse", Payload = "Error: Invalid login payload" };
+                        }
+
                         using (var db = DatabaseHelper.GetConnection())
                         {
                             var user = db.QueryFirstOrDefault<User>("SELECT * FROM Users WHERE Username = @Username AND Password = @Password", loginData);
@@ -189,13 +209,13 @@ namespace ServerAdmin
 
     public class NetworkMessage
     {
-        public string Action { get; set; }
-        public string Payload { get; set; }
+        public string? Action { get; set; }
+        public string? Payload { get; set; }
     }
 
     public class LoginRequest
     {
-        public string Username { get; set; }
-        public string Password { get; set; }
+        public string? Username { get; set; }
+        public string? Password { get; set; }
     }
 }
